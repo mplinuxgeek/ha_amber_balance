@@ -1,0 +1,343 @@
+type: custom:apexcharts-card
+header:
+  show: true
+  title: Amber Daily Balance (This Month)
+  show_states: true
+  colorize_states: true
+graph_span: 1month
+span:
+  start: month
+now:
+  show: true
+  label: now
+apex_config:
+  chart:
+    background: "#1C1C1C"
+    height: 400
+    toolbar:
+      show: true
+      tools:
+        zoom: true
+        zoomin: true
+        zoomout: true
+        pan: true
+        reset: true
+        download: true
+        export:
+          png:
+            filename: chart-export
+            width: 1200
+  markers:
+    size: 0
+  xaxis:
+    type: datetime
+    labels:
+      format: d MMM
+      style:
+        colors: "#FFFFFF"
+    tooltip:
+      enabled: false
+    crosshairs:
+      show: false
+  plotOptions:
+    bar:
+      columnWidth: 60%
+      colors:
+        ranges:
+          - from: -1000000
+            to: -0.00001
+            color: "#2ecc71"
+          - from: 0
+            to: 1000000
+            color: "#e74c3c"
+  dataLabels:
+    enabled: true
+    formatter: |
+      EVAL:function(val, opts){
+        const name = opts.w.globals.seriesNames?.[opts.seriesIndex] || "";
+        if (name !== "Daily label") return "";
+
+        // Pull the real value from the Daily position series (index 0)
+        const v = opts.w.globals.series?.[0]?.[opts.dataPointIndex];
+        if (v === undefined || v === null || Number.isNaN(v)) return "";
+
+        return Number(v).toFixed(1);
+      }
+    style:
+      fontSize: 12px
+      fontWeight: 1000
+      colors:
+        - |
+          EVAL:function(opts){
+            const v = opts.w.globals.series?.[0]?.[opts.dataPointIndex];
+            return (Number(v) >= 0) ? "#e74c3c" : "#2ecc71";
+          }
+    background:
+      enabled: true
+      foreColor: "#ffffff"
+      borderRadius: 8
+      padding: 6
+      opacity: 0.92
+      borderWidth: 1
+      borderColor: rgba(255,255,255,0.18)
+    dropShadow:
+      enabled: true
+      top: 1
+      left: 0
+      blur: 2
+      opacity: 0.35
+  tooltip:
+    shared: false
+    intersect: false
+    fixed:
+      enabled: true
+      position: topRight
+      offsetX: 0
+      offsetY: 0
+    custom: |
+      EVAL:function({ series, seriesIndex, dataPointIndex, w }) {
+        const names = w.globals.seriesNames || [];
+
+        const get = (seriesName) => {
+          const idx = names.indexOf(seriesName);
+          if (idx === -1) return null;
+          const v = series[idx]?.[dataPointIndex];
+          return (v === undefined || v === null || Number.isNaN(v)) ? null : Number(v);
+        };
+
+        const money = (v) => (v === null) ? "—" : ("$" + v.toFixed(2));
+
+        const row = (label, value, bold=false) => `
+          <div style="display:flex;justify-content:space-between;gap:10px;line-height:1.25;">
+            <span style="opacity:${bold ? "1" : "0.9"}">${label}</span>
+            <b style="font-weight:${bold ? "800" : "700"}">${value}</b>
+          </div>`;
+
+        const divider = () => `
+          <div style="margin:6px 0;border-top:1px solid rgba(255,255,255,0.16);"></div>`;
+
+        const hoveredName = names[seriesIndex] || "";
+        const isMonthTooltip = hoveredName === "Month total";
+
+        if (isMonthTooltip) {
+          const monthSeries = w.globals.series?.[seriesIndex] ?? [];
+          const monthSeriesX = w.globals.seriesX?.[seriesIndex] ?? [];
+          const lastIdx = monthSeries.length - 1;
+          const lastValue = (lastIdx >= 0) ? Number(monthSeries[lastIdx]) : null;
+          const lastTs = (lastIdx >= 0) ? (monthSeriesX[lastIdx] ?? null) : null;
+          const lastDate = lastTs ? new Date(lastTs) : null;
+          const lastLabel = lastDate
+            ? lastDate.toLocaleDateString(undefined, { day: "2-digit", month: "short" })
+            : "";
+
+          return `
+            <div style="padding:8px 10px; min-width:220px;">
+              <div style="font-weight:800; margin-bottom:5px;">${lastLabel || "Month total"}</div>
+              ${row("Month total (latest)", money(lastValue), true)}
+            </div>`;
+        }
+
+        const xArr = w.globals.seriesX?.[seriesIndex] ?? w.globals.seriesX?.[0] ?? [];
+        const ts = xArr[dataPointIndex];
+        const d = ts ? new Date(ts) : null;
+        const dateLabel = d ? d.toLocaleDateString(undefined, { day: "2-digit", month: "short" }) : "";
+
+        const dailyPos = get("Daily position");
+        const imp = get("Import $");
+        const exp = get("Export $");
+        const surcharge = get("Surcharge $");
+        const subscription = get("Subscription $");
+        const monthTotal = get("Month total");
+
+        const energyNet = (imp === null && exp === null) ? null : (Number(imp || 0) + Number(exp || 0));
+        const feesTotal = (surcharge === null && subscription === null) ? null : (Number(surcharge || 0) + Number(subscription || 0));
+
+        const feesLine =
+          (surcharge === null && subscription === null)
+            ? "—"
+            : `${money(surcharge)} <span style="opacity:0.75;">+</span> ${money(subscription)} <span style="opacity:0.75;">=</span> <b style="font-weight:800;">${money(feesTotal)}</b>`;
+
+        const html =
+          row("Daily position", money(dailyPos), true) +
+          divider() +
+          `<div style="font-weight:700; opacity:0.95; margin-bottom:3px;">Breakdown</div>` +
+          row("Import", money(imp)) +
+          row("Export", money(exp)) +
+          row("Net Import/Export", money(energyNet), true) +
+          `<div style="display:flex;justify-content:space-between;gap:10px;line-height:1.25; margin-top:2px;">
+             <span style="opacity:0.9;">Fees</span>
+             <span style="text-align:right; white-space:nowrap;">${feesLine}</span>
+           </div>` +
+          divider() +
+          row("Month total", money(monthTotal), true);
+
+        return `
+          <div style="padding:8px 10px; min-width:240px;">
+            <div style="font-weight:800; margin-bottom:5px;">${dateLabel}</div>
+            ${html}
+          </div>`;
+      }
+  legend:
+    show: true
+    labels:
+      colors: "#FFFFFF"
+  grid:
+    strokeDashArray: 3
+    xaxis:
+      lines:
+        show: false
+    yaxis:
+      lines:
+        show: true
+  annotations:
+    yaxis:
+      - "y": 0
+        borderColor: "#FFFFFF"
+        strokeDashArray: 0
+        label:
+          text: $0
+          style:
+            color: "#000000"
+            background: "#FFFFFF"
+yaxis:
+  - id: daily
+    min: "|-0.25|"
+    max: "|+0.25|"
+    apex_config:
+      title:
+        text: Daily (AUD)
+      labels:
+        style:
+          colors: "#FFFFFF"
+        formatter: |
+          EVAL:function(val){ return "$" + Math.round(val); }
+  - id: month
+    opposite: true
+    max: "|+2|"
+    align_to: 1
+    apex_config:
+      title:
+        text: Month total (AUD)
+      labels:
+        style:
+          colors: "#FFFFFF"
+        formatter: |
+          EVAL:function(val){ return "$" + Math.round(val); }
+  - id: meta
+    apex_config:
+      show: false
+      labels:
+        show: false
+      axisBorder:
+        show: false
+      axisTicks:
+        show: false
+      min: -1000000
+      max: 1000000
+series:
+  - entity: sensor.amber_balance_01k4s2_position
+    name: Daily position
+    type: column
+    yaxis_id: daily
+    show:
+      datalabels: false
+      in_header: false
+      in_legend: false
+      extremas: false
+    data_generator: >
+      const daily = entity.attributes?.recent_daily ?? [];
+      return daily.map((d) => [new Date(d.date).getTime(), Number(d.position)]);
+  - entity: sensor.amber_balance_01k4s2_position
+    name: Month total
+    type: line
+    yaxis_id: month
+    stroke_width: 2
+    show:
+      in_header: true
+      in_legend: false
+      extremas: true
+    extend_to: false
+    data_generator: >
+      const daily = entity.attributes?.recent_daily ?? [];
+      let sum = 0;
+      return daily.map((d) => {
+        sum += Number(d.position) || 0;
+        return [new Date(d.date).getTime(), sum];
+      });
+  - entity: sensor.amber_balance_01k4s2_position
+    name: Daily label
+    type: line
+    yaxis_id: daily
+    stroke_width: 0
+    opacity: 0
+    show:
+      datalabels: true
+      in_header: false
+      in_legend: false
+      extremas: false
+    data_generator: >
+      const daily = entity.attributes?.recent_daily ?? [];
+      const SHIFT = 0.55;
+      return daily.map((d) => {
+        const v = Number(d.position) || 0;
+        const y = v >= 0 ? v + SHIFT : v - SHIFT;
+        return [new Date(d.date).getTime(), y];
+      });
+  - entity: sensor.amber_balance_01k4s2_position
+    name: Import $
+    type: line
+    yaxis_id: meta
+    stroke_width: 0
+    opacity: 0
+    show:
+      in_header: false
+      in_legend: false
+      legend_value: false
+      extremas: false
+    data_generator: >
+      const daily = entity.attributes?.recent_daily ?? [];
+      return daily.map((d) => [new Date(d.date + 'T12:00:00').getTime(), Number(d.import_value)]);
+  - entity: sensor.amber_balance_01k4s2_position
+    name: Export $
+    type: line
+    yaxis_id: meta
+    stroke_width: 0
+    opacity: 0
+    show:
+      in_header: false
+      in_legend: false
+      legend_value: false
+      extremas: false
+    data_generator: >
+      const daily = entity.attributes?.recent_daily ?? [];
+      return daily.map((d) => [new Date(d.date + 'T12:00:00').getTime(), Number(d.export_value)]);
+  - entity: sensor.amber_balance_01k4s2_position
+    name: Surcharge $
+    type: line
+    yaxis_id: meta
+    stroke_width: 0
+    opacity: 0
+    show:
+      in_header: false
+      in_legend: false
+      legend_value: false
+      extremas: false
+    data_generator: >
+      const daily = entity.attributes?.recent_daily ?? [];
+      return daily.map((d) => [new Date(d.date + 'T12:00:00').getTime(), Number(d.surcharge)]);
+  - entity: sensor.amber_balance_01k4s2_position
+    name: Subscription $
+    type: line
+    yaxis_id: meta
+    stroke_width: 0
+    opacity: 0
+    show:
+      in_header: false
+      in_legend: false
+      legend_value: false
+      extremas: false
+    data_generator: >
+      const daily = entity.attributes?.recent_daily ?? [];
+      return daily.map((d) => [new Date(d.date + 'T12:00:00').getTime(), Number(d.subscription)]);
+grid_options:
+  columns: 24

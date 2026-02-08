@@ -1,0 +1,50 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Amber Balance Setup",
+        "description": "Configure your Amber Balance integration",
+        "data": {
+          "token": "API Token",
+          "site_id": "Site ID (optional)",
+          "name": "Name",
+          "billing_start_day": "Billing Cycle Start Day (1-28)",
+          "surcharge_cents": "Daily Surcharge (cents)",
+          "subscription": "Monthly Subscription Fee (AUD)"
+        }
+      }
+    },
+    "error": {
+      "auth": "Authentication failed. Please check your API token.",
+      "no_site": "No sites found for this account."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Amber Balance Options",
+        "description": "Update your Amber Balance configuration",
+        "data": {
+          "token": "API Token",
+          "billing_start_day": "Billing Cycle Start Day (1-28)",
+          "surcharge_cents": "Daily Surcharge (cents)",
+          "subscription": "Monthly Subscription Fee (AUD)"
+        }
+      }
+    },
+    "error": {
+      "auth": "Authentication failed. Please check your API token.",
+      "no_site": "No sites found for this account."
+    }
+  },
+  "entity": {
+    "number": {
+      "daily_surcharge": {
+        "name": "Daily Surcharge"
+      },
+      "monthly_subscription": {
+        "name": "Monthly Subscription"
+      }
+    }
+  }
+}

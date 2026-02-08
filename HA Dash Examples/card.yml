@@ -1,0 +1,142 @@
+type: grid
+columns: 3
+square: false
+cards:
+  - type: custom:button-card
+    entity: sensor.amber_balance_01k4s2_position
+    name: Import $
+    show_icon: false
+    show_state: true
+    styles:
+      card:
+        - height: 100px
+        - padding: 12px 6px
+      name:
+        - align-self: start
+        - font-size: 14px
+      state:
+        - font-weight: bold
+        - align-self: middle
+        - color: "#e74c3c"
+    state_display: |
+      [[[ const v = parseFloat(entity.attributes.import_value || 0);
+          return '$' + v.toFixed(2); ]]]
+  - type: custom:button-card
+    entity: sensor.best_day
+    name: Best Day
+    show_icon: false
+    show_state: true
+    styles:
+      card:
+        - height: 100px
+        - padding: 12px 6px
+      name:
+        - align-self: start
+        - font-size: 14px
+      state:
+        - font-weight: bold
+        - align-self: middle
+        - color: "#2ecc71"
+    state_display: |
+      [[[
+        if (!entity || entity.state === undefined || entity.state === 'unavailable') return '—';
+        const v = parseFloat(entity.state || 0);
+        const raw = entity.attributes?.date;
+        const d = raw ? new Date(raw + 'T00:00:00') : null;
+        const dStr = d ? `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}` : '';
+        const value = `${v < 0 ? '-$' : '$'}${Math.abs(v).toFixed(2)}`;
+        const date = dStr ? `<span style="display:block;font-size:0.85em;font-weight:500;opacity:0.75;margin-top:4px;">${dStr}</span>` : '';
+        return value + date;
+      ]]]
+  - type: custom:button-card
+    entity: sensor.amber_balance_01k4s2_position
+    name: Total Fees
+    show_icon: false
+    show_state: true
+    styles:
+      card:
+        - height: 100px
+        - padding: 12px 6px
+      name:
+        - align-self: start
+        - font-size: 14px
+      state:
+        - font-weight: bold
+        - align-self: middle
+    state_display: |
+      [[[
+        var sur = parseFloat(entity.attributes.surcharge || 0);
+        var sub = parseFloat(entity.attributes.subscription || 0);
+        return '$' + (sur + sub).toFixed(2);
+      ]]]
+  - type: custom:button-card
+    entity: sensor.amber_balance_01k4s2_position
+    name: Export $
+    show_icon: false
+    show_state: true
+    styles:
+      card:
+        - height: 100px
+        - padding: 12px 6px
+      name:
+        - align-self: start
+        - font-size: 14px
+      state:
+        - font-weight: bold
+        - align-self: middle
+        - color: "#2ecc71"
+    state_display: |
+      [[[ const v = parseFloat(entity.attributes.export_value || 0);
+          return '$' + v.toFixed(2); ]]]
+  - type: custom:button-card
+    entity: sensor.worst_day
+    name: Worst Day
+    show_icon: false
+    show_state: true
+    styles:
+      card:
+        - height: 100px
+        - padding: 12px 6px
+      name:
+        - align-self: start
+        - font-size: 14px
+      state:
+        - font-weight: bold
+        - align-self: middle
+        - color: "#e74c3c"
+    state_display: |
+      [[[
+        if (!entity || entity.state === undefined || entity.state === 'unavailable') return '—';
+        const v = parseFloat(entity.state || 0);
+        const raw = entity.attributes?.date;
+        const d = raw ? new Date(raw + 'T00:00:00') : null;
+        const dStr = d ? `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}` : '';
+        const value = `${v < 0 ? '-$' : '$'}${Math.abs(v).toFixed(2)}`;
+        const date = dStr ? `<span style="display:block;font-size:0.85em;font-weight:500;opacity:0.75;margin-top:4px;">${dStr}</span>` : '';
+        return value + date;
+      ]]]
+  - type: custom:button-card
+    entity: sensor.amber_balance_01k4s2_position
+    name: Net Position
+    show_icon: false
+    show_state: true
+    styles:
+      card:
+        - height: 100px
+        - padding: 12px 6px
+      name:
+        - align-self: start
+        - font-size: 14px
+      state:
+        - font-weight: bold
+        - align-self: middle
+        - color: |
+            [[[
+              var v = parseFloat(entity.attributes.position);
+              return v <= 0 ? "#2ecc71" : "#e74c3c";
+            ]]]
+    state_display: |
+      [[[
+        var v = parseFloat(entity.attributes.position || 0);
+        return (v < 0 ? '-$' : '$') + Math.abs(v).toFixed(2);
+      ]]]
