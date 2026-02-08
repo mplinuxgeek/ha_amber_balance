@@ -3,7 +3,7 @@ columns: 3
 square: false
 cards:
   - type: custom:button-card
-    entity: sensor.amber_balance_01k4s2_position
+    entity: sensor.month_total
     name: Import $
     show_icon: false
     show_state: true
@@ -49,7 +49,7 @@ cards:
         return value + date;
       ]]]
   - type: custom:button-card
-    entity: sensor.amber_balance_01k4s2_position
+    entity: sensor.month_total
     name: Total Fees
     show_icon: false
     show_state: true
@@ -70,7 +70,7 @@ cards:
         return '$' + (sur + sub).toFixed(2);
       ]]]
   - type: custom:button-card
-    entity: sensor.amber_balance_01k4s2_position
+    entity: sensor.month_total
     name: Export $
     show_icon: false
     show_state: true
@@ -116,7 +116,7 @@ cards:
         return value + date;
       ]]]
   - type: custom:button-card
-    entity: sensor.amber_balance_01k4s2_position
+    entity: sensor.month_total
     name: Net Position
     show_icon: false
     show_state: true

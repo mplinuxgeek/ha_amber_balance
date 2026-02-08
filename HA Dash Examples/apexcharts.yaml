@@ -235,7 +235,7 @@ yaxis:
       min: -1000000
       max: 1000000
 series:
-  - entity: sensor.amber_balance_01k4s2_position
+  - entity: sensor.month_total
     name: Daily position
     type: column
     yaxis_id: daily
@@ -245,9 +245,9 @@ series:
       in_legend: false
       extremas: false
     data_generator: >
-      const daily = entity.attributes?.recent_daily ?? [];
-      return daily.map((d) => [new Date(d.date).getTime(), Number(d.position)]);
-  - entity: sensor.amber_balance_01k4s2_position
+      const daily = entity.attributes?.recent_daily ?? []; return daily.map((d)
+      => [new Date(d.date).getTime(), Number(d.position)]);
+  - entity: sensor.month_total
     name: Month total
     type: line
     yaxis_id: month
@@ -258,13 +258,12 @@ series:
       extremas: true
     extend_to: false
     data_generator: >
-      const daily = entity.attributes?.recent_daily ?? [];
-      let sum = 0;
-      return daily.map((d) => {
+      const daily = entity.attributes?.recent_daily ?? []; let sum = 0; return
+      daily.map((d) => {
         sum += Number(d.position) || 0;
         return [new Date(d.date).getTime(), sum];
       });
-  - entity: sensor.amber_balance_01k4s2_position
+  - entity: sensor.month_total
     name: Daily label
     type: line
     yaxis_id: daily
@@ -276,14 +275,13 @@ series:
       in_legend: false
       extremas: false
     data_generator: >
-      const daily = entity.attributes?.recent_daily ?? [];
-      const SHIFT = 0.55;
+      const daily = entity.attributes?.recent_daily ?? []; const SHIFT = 0.55;
       return daily.map((d) => {
         const v = Number(d.position) || 0;
         const y = v >= 0 ? v + SHIFT : v - SHIFT;
         return [new Date(d.date).getTime(), y];
       });
-  - entity: sensor.amber_balance_01k4s2_position
+  - entity: sensor.month_total
     name: Import $
     type: line
     yaxis_id: meta
@@ -295,9 +293,9 @@ series:
       legend_value: false
       extremas: false
     data_generator: >
-      const daily = entity.attributes?.recent_daily ?? [];
-      return daily.map((d) => [new Date(d.date + 'T12:00:00').getTime(), Number(d.import_value)]);
-  - entity: sensor.amber_balance_01k4s2_position
+      const daily = entity.attributes?.recent_daily ?? []; return daily.map((d)
+      => [new Date(d.date + 'T12:00:00').getTime(), Number(d.import_value)]);
+  - entity: sensor.month_total
     name: Export $
     type: line
     yaxis_id: meta
@@ -309,9 +307,9 @@ series:
       legend_value: false
       extremas: false
     data_generator: >
-      const daily = entity.attributes?.recent_daily ?? [];
-      return daily.map((d) => [new Date(d.date + 'T12:00:00').getTime(), Number(d.export_value)]);
-  - entity: sensor.amber_balance_01k4s2_position
+      const daily = entity.attributes?.recent_daily ?? []; return daily.map((d)
+      => [new Date(d.date + 'T12:00:00').getTime(), Number(d.export_value)]);
+  - entity: sensor.month_total
     name: Surcharge $
     type: line
     yaxis_id: meta
@@ -323,9 +321,9 @@ series:
       legend_value: false
       extremas: false
     data_generator: >
-      const daily = entity.attributes?.recent_daily ?? [];
-      return daily.map((d) => [new Date(d.date + 'T12:00:00').getTime(), Number(d.surcharge)]);
-  - entity: sensor.amber_balance_01k4s2_position
+      const daily = entity.attributes?.recent_daily ?? []; return daily.map((d)
+      => [new Date(d.date + 'T12:00:00').getTime(), Number(d.surcharge)]);
+  - entity: sensor.month_total
     name: Subscription $
     type: line
     yaxis_id: meta
@@ -337,7 +335,7 @@ series:
       legend_value: false
       extremas: false
     data_generator: >
-      const daily = entity.attributes?.recent_daily ?? [];
-      return daily.map((d) => [new Date(d.date + 'T12:00:00').getTime(), Number(d.subscription)]);
+      const daily = entity.attributes?.recent_daily ?? []; return daily.map((d)
+      => [new Date(d.date + 'T12:00:00').getTime(), Number(d.subscription)]);
 grid_options:
   columns: 24

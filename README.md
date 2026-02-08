@@ -11,7 +11,7 @@ Amber Balance pulls your Amber usage/export data and calculates your live billin
 - Diagnostic sensors for Amber site metadata and a last-update timestamp.
 
 ### Installation (HACS)
-1) Add this repo to HACS: `HACS → Integrations → Custom repositories → https://github.com/bircoe/amber_balance` (category: Integration).
+1) Add this repo to HACS: `HACS → Integrations → Custom repositories → https://github.com/mplinuxgeek/ha_amber_balance.git` (category: Integration).
 2) Install **Amber Balance** and restart Home Assistant.
 3) Go to **Settings → Devices & services → Add integration → Amber Balance** and follow the prompts.
 
