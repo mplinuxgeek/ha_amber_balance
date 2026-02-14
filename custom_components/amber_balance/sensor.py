@@ -17,6 +17,7 @@ from homeassistant.const import ATTR_ATTRIBUTION
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.update_coordinator import UpdateFailed, DataUpdateCoordinator, CoordinatorEntity
 
@@ -64,6 +65,30 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 def _dedupe_site_ids(site_ids: list[str]) -> list[str]:
     """Return site IDs without duplicates while preserving order."""
     return list(dict.fromkeys(str(sid) for sid in site_ids if sid))
+
+
+def _migrate_entity_ids(hass: HomeAssistant, entities: list[SensorEntity]) -> None:
+    """Rename existing entities in the registry to explicit prefixed IDs."""
+    registry = er.async_get(hass)
+    for entity in entities:
+        unique_id = entity.unique_id
+        desired_entity_id = getattr(entity, "_attr_entity_id", None)
+        if not unique_id or not desired_entity_id:
+            continue
+        current_entity_id = registry.async_get_entity_id("sensor", DOMAIN, unique_id)
+        if not current_entity_id or current_entity_id == desired_entity_id:
+            continue
+        if registry.async_get(desired_entity_id):
+            _LOGGER.warning(
+                "Cannot migrate sensor %s to %s because it already exists",
+                current_entity_id,
+                desired_entity_id,
+            )
+            continue
+        registry.async_update_entity(
+            current_entity_id,
+            new_entity_id=desired_entity_id,
+        )
 
 
 def build_sensors(api: AmberApi, coordinator: AmberCoordinator, base_name: str, site_id: str):
@@ -190,6 +215,7 @@ async def async_setup_platform(hass: HomeAssistant, config, add_entities, discov
             name=f"{name} ({sid[:6]})",
         )
         sensors.extend(build_sensors(api, coordinator, name, sid))
+    _migrate_entity_ids(hass, sensors)
     add_entities(sensors, update_before_add=True)
 
 
@@ -257,6 +283,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
             sensors.extend(
                 build_sensors(api, coordinator, data.get(CONF_NAME, DEFAULT_NAME), sid)
             )
+    _migrate_entity_ids(hass, sensors)
     async_add_entities(sensors, update_before_add=False)
 
 
@@ -652,6 +679,8 @@ class AmberBalanceSensor(CoordinatorEntity[AmberCoordinator], SensorEntity):
         self._attr_name = name
         self._attr_icon = "mdi:currency-usd"
         self._attr_native_unit_of_measurement = "AUD"
+        site_suffix = (self._api._site_id or "default").lower()
+        self._attr_entity_id = f"sensor.{DOMAIN}_{site_suffix}_v2_position"
         self._state = None
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, api._site_id)},
@@ -743,6 +772,8 @@ class AmberMetricSensor(CoordinatorEntity[AmberCoordinator], SensorEntity):
         self._attr_native_unit_of_measurement = unit
         self._attr_state_class = state_class
         self._attr_device_class = device_class
+        site_suffix = (self._api._site_id or "default").lower()
+        self._attr_entity_id = f"sensor.{DOMAIN}_{site_suffix}_v2_{self._metric}"
         self._state = None
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, api._site_id)},
@@ -814,6 +845,8 @@ class AmberDiagnosticSensor(SensorEntity):
         self._metric = metric
         self._attr_name = name
         self._attr_icon = icon
+        site_suffix = (self._api._site_id or "default").lower()
+        self._attr_entity_id = f"sensor.{DOMAIN}_{site_suffix}_v2_diag_{self._metric}"
         self._state = None
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, api._site_id)},
@@ -878,6 +911,8 @@ class AmberLastUpdateSensor(CoordinatorEntity[AmberCoordinator], SensorEntity):
         self._attr_name = name
         self._attr_icon = "mdi:clock-outline"
         self._api = api
+        site_suffix = (self._api._site_id or "default").lower()
+        self._attr_entity_id = f"sensor.{DOMAIN}_{site_suffix}_v2_last_update"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, api._site_id)},
             name=device_name,

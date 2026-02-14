@@ -7,6 +7,7 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -14,6 +15,30 @@ from .const import CONF_NAME, CONF_SITE_ID, CONF_SITE_IDS, DEFAULT_NAME, DOMAIN
 from .sensor import AmberCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _migrate_entity_ids(hass: HomeAssistant, entities: list["AmberRefreshButton"]) -> None:
+    """Rename existing entities in the registry to explicit prefixed IDs."""
+    registry = er.async_get(hass)
+    for entity in entities:
+        unique_id = entity.unique_id
+        desired_entity_id = getattr(entity, "_attr_entity_id", None)
+        if not unique_id or not desired_entity_id:
+            continue
+        current_entity_id = registry.async_get_entity_id("button", DOMAIN, unique_id)
+        if not current_entity_id or current_entity_id == desired_entity_id:
+            continue
+        if registry.async_get(desired_entity_id):
+            _LOGGER.warning(
+                "Cannot migrate button %s to %s because it already exists",
+                current_entity_id,
+                desired_entity_id,
+            )
+            continue
+        registry.async_update_entity(
+            current_entity_id,
+            new_entity_id=desired_entity_id,
+        )
 
 
 async def async_setup_entry(
@@ -64,6 +89,7 @@ async def async_setup_entry(
         )
 
     if buttons:
+        _migrate_entity_ids(hass, buttons)
         async_add_entities(buttons)
 
 
@@ -87,6 +113,7 @@ class AmberRefreshButton(CoordinatorEntity[AmberCoordinator], ButtonEntity):
         self._refreshing = False
         site_suffix = site_id.lower()
         self._attr_unique_id = f"{DOMAIN}_{site_suffix}_v2_refresh"
+        self._attr_entity_id = f"button.{DOMAIN}_{site_suffix}_v2_refresh"
         self._attr_name = "Refresh"
         self._attr_icon = "mdi:refresh"
         self._attr_device_info = DeviceInfo(
