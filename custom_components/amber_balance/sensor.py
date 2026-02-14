@@ -433,10 +433,28 @@ class AmberCoordinator(DataUpdateCoordinator):
         if records:
             self._daily_cache.update(self._summaries(records))
         daily = []
-        for dkey in sorted(self._daily_cache):
-            ddate = date.fromisoformat(dkey)
-            if start <= ddate <= end:
+        cur = start
+        while cur <= end:
+            dkey = cur.isoformat()
+            if dkey in self._daily_cache:
                 daily.append(self._daily_cache[dkey])
+            else:
+                # Fill missing days with zero-usage record
+                days_in_month = calendar.monthrange(cur.year, cur.month)[1]
+                surcharge = float(self._surcharge_cents) / 100.0
+                subscription = float(self._subscription) / days_in_month
+                daily.append({
+                    "date": dkey,
+                    "import_kwh": 0.0,
+                    "export_kwh": 0.0,
+                    "import_value": 0.0,
+                    "export_value": 0.0,
+                    "energy_total": 0.0,
+                    "surcharge": surcharge,
+                    "subscription": subscription,
+                    "position": surcharge + subscription,
+                })
+            cur += timedelta(days=1)
         return daily
 
     def _purge_out_of_range_cache(self, start: date, end: date) -> None:
