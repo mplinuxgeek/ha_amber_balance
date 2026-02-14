@@ -61,6 +61,11 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 )
 
 
+def _dedupe_site_ids(site_ids: list[str]) -> list[str]:
+    """Return site IDs without duplicates while preserving order."""
+    return list(dict.fromkeys(str(sid) for sid in site_ids if sid))
+
+
 def build_sensors(api: AmberApi, coordinator: AmberCoordinator, base_name: str, site_id: str):
     device_name = f"{base_name} ({site_id})"
     sensors: list[SensorEntity] = [
@@ -152,6 +157,14 @@ def build_sensors(api: AmberApi, coordinator: AmberCoordinator, base_name: str, 
 
 
 async def async_setup_platform(hass: HomeAssistant, config, add_entities, discovery_info=None):
+    # Avoid duplicate entities when both YAML and UI config entry are present.
+    if hass.config_entries.async_entries(DOMAIN):
+        _LOGGER.warning(
+            "Skipping YAML sensor setup because config entry setup is active for %s",
+            DOMAIN,
+        )
+        return
+
     token = config[CONF_TOKEN]
     name = config[CONF_NAME]
     billing_start_day = config.get(CONF_BILLING_START_DAY, DEFAULT_BILLING_START_DAY)
@@ -164,6 +177,7 @@ async def async_setup_platform(hass: HomeAssistant, config, add_entities, discov
         site_ids = [config[CONF_SITE_ID]]
     else:
         site_ids = await AmberApi.discover_sites(session, token)
+    site_ids = _dedupe_site_ids(site_ids)
     sensors = []
     for sid in site_ids:
         api = AmberApi(session, token, sid)
@@ -196,6 +210,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
     site_ids = data.get(CONF_SITE_IDS) or []
     if not site_ids and data.get(CONF_SITE_ID):
         site_ids = [data[CONF_SITE_ID]]
+    site_ids = _dedupe_site_ids(site_ids)
     
     # Fetch site info for all sites at once
     try:
@@ -269,13 +284,13 @@ class AmberApi:
                     text = await resp.text()
                     raise RuntimeError(f"GET {url} -> {resp.status}: {text[:200]}")
                 data = await resp.json()
-        site_ids = []
+        site_ids: list[str] = []
         if isinstance(data, list):
             for s in data:
                 sid = s.get("id") or s.get("siteId") or s.get("site_id")
                 if sid:
                     site_ids.append(str(sid))
-        return site_ids
+        return _dedupe_site_ids(site_ids)
     
     @staticmethod
     async def fetch_all_sites_info(session: aiohttp.ClientSession, token: str) -> dict[str, dict]:
@@ -680,7 +695,6 @@ class AmberBalanceSensor(CoordinatorEntity[AmberCoordinator], SensorEntity):
                     last_update = str(self.coordinator.last_update_time)
 
             daily_records = data.get("daily", [])
-            recent_daily = daily_records[-7:] if len(daily_records) > 7 else daily_records
 
             self._attr_extra_state_attributes = {
                 ATTR_ATTRIBUTION: "Data from amber.com.au",
@@ -709,7 +723,7 @@ class AmberBalanceSensor(CoordinatorEntity[AmberCoordinator], SensorEntity):
                 "most_average_day_date": totals.get("most_average_day_date"),
                 "days_in_credit": totals.get("days_in_credit", 0),
                 "days_owing": totals.get("days_owing", 0),
-                "recent_daily": recent_daily,
+                "recent_daily": daily_records,
             }
             self.async_write_ha_state()
         except Exception as err:
