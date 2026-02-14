@@ -383,21 +383,15 @@ class AmberCoordinator(DataUpdateCoordinator):
 
         records: list[dict] = []
         if start <= end:
-            fetch_start: date | None = start
-            if self._daily_cache:
-                last_cached = max(date.fromisoformat(k) for k in self._daily_cache)
-                if end > last_cached:
-                    fetch_start = max(start, last_cached)
-                else:
-                    fetch_start = None
-            if fetch_start and fetch_start <= end:
-                try:
-                    records = await self._api.fetch_usage(fetch_start, end)
-                except Exception as err:
-                    raise UpdateFailed(
-                        f"Amber usage fetch failed for {self._api._site_id}: {err}"
-                    ) from err
+            try:
+                records = await self._api.fetch_usage(start, end)
+            except Exception as err:
+                raise UpdateFailed(
+                    f"Amber usage fetch failed for {self._api._site_id}: {err}"
+                ) from err
 
+        # Always rebuild daily cache from scratch for this cycle
+        self._daily_cache = {}
         daily = self._merge_daily(records, start, end)
         self._purge_out_of_range_cache(start, end)
         totals = self._totals(daily, self._cycle_length_current)
@@ -407,7 +401,7 @@ class AmberCoordinator(DataUpdateCoordinator):
                 range_end = datetime.strptime(daily[-1]["date"], ISO_DATE).date()
             except Exception:
                 pass
-        
+
         # Update the last update time
         self.last_update_time = datetime.now(self._nem_tz)
         payload = {
