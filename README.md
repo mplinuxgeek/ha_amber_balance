@@ -32,7 +32,7 @@ After setup you can adjust surcharge/subscription in the two number entities; up
 
 ### Entities created (per site)
 - Entity IDs are prefixed as `amber_balance_` for easier searching in Developer Tools.
-- Sensor: `sensor.amber_balance_<site_id>_v2_position` (overall month/cycle position) with attributes including `recent_daily` (full cycle daily records) for dashboards.
+- Sensor: `sensor.amber_balance_<site_id>_position` (overall month/cycle position) with attributes including `recent_daily` (full cycle daily records) for dashboards.
 - Metric sensors: import/export/net kWh, import/export $, before-fees, surcharge, subscription, fees, projected month total, average daily cost, days elapsed/remaining, days in credit/owing, best/worst/most-average day values (with dates).
 - Diagnostic sensors: NMI, network, status, active from, channels.
 - Button: manual refresh.

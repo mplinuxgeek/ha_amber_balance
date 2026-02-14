@@ -22,10 +22,17 @@ def _migrate_entity_ids(hass: HomeAssistant, entities: list["AmberRefreshButton"
     registry = er.async_get(hass)
     for entity in entities:
         unique_id = entity.unique_id
+        legacy_unique_id = getattr(entity, "_legacy_unique_id", None)
         desired_entity_id = getattr(entity, "_attr_entity_id", None)
         if not unique_id or not desired_entity_id:
             continue
         current_entity_id = registry.async_get_entity_id("button", DOMAIN, unique_id)
+        if not current_entity_id and legacy_unique_id:
+            current_entity_id = registry.async_get_entity_id(
+                "button",
+                DOMAIN,
+                legacy_unique_id,
+            )
         if not current_entity_id or current_entity_id == desired_entity_id:
             continue
         if registry.async_get(desired_entity_id):
@@ -112,8 +119,9 @@ class AmberRefreshButton(CoordinatorEntity[AmberCoordinator], ButtonEntity):
         self._friendly_site_name = friendly_site_name or site_id
         self._refreshing = False
         site_suffix = site_id.lower()
-        self._attr_unique_id = f"{DOMAIN}_{site_suffix}_v2_refresh"
-        self._attr_entity_id = f"button.{DOMAIN}_{site_suffix}_v2_refresh"
+        self._attr_unique_id = f"{DOMAIN}_{site_suffix}_refresh"
+        self._attr_entity_id = f"button.{DOMAIN}_{site_suffix}_refresh"
+        self._legacy_unique_id = f"{DOMAIN}_{site_suffix}_v2_refresh"
         self._attr_name = "Refresh"
         self._attr_icon = "mdi:refresh"
         self._attr_device_info = DeviceInfo(

@@ -4,7 +4,7 @@ square: false
 # Replace <site_id> with your site suffix, e.g. 01k4s25c3j5xh5r8mn2xtbzg86
 cards:
   - type: custom:button-card
-    entity: sensor.amber_balance_<site_id>_v2_position
+    entity: sensor.amber_balance_<site_id>_position
     name: Import $
     show_icon: false
     show_state: true
@@ -23,7 +23,7 @@ cards:
       [[[ const v = parseFloat(entity.attributes.import_value || 0);
           return '$' + v.toFixed(2); ]]]
   - type: custom:button-card
-    entity: sensor.amber_balance_<site_id>_v2_best_day
+    entity: sensor.amber_balance_<site_id>_best_day
     name: Best Day
     show_icon: false
     show_state: true
@@ -50,7 +50,7 @@ cards:
         return value + date;
       ]]]
   - type: custom:button-card
-    entity: sensor.amber_balance_<site_id>_v2_position
+    entity: sensor.amber_balance_<site_id>_position
     name: Total Fees
     show_icon: false
     show_state: true
@@ -71,7 +71,7 @@ cards:
         return '$' + (sur + sub).toFixed(2);
       ]]]
   - type: custom:button-card
-    entity: sensor.amber_balance_<site_id>_v2_position
+    entity: sensor.amber_balance_<site_id>_position
     name: Export $
     show_icon: false
     show_state: true
@@ -90,7 +90,7 @@ cards:
       [[[ const v = parseFloat(entity.attributes.export_value || 0);
           return '$' + v.toFixed(2); ]]]
   - type: custom:button-card
-    entity: sensor.amber_balance_<site_id>_v2_worst_day
+    entity: sensor.amber_balance_<site_id>_worst_day
     name: Worst Day
     show_icon: false
     show_state: true
@@ -117,7 +117,7 @@ cards:
         return value + date;
       ]]]
   - type: custom:button-card
-    entity: sensor.amber_balance_<site_id>_v2_position
+    entity: sensor.amber_balance_<site_id>_position
     name: Net Position
     show_icon: false
     show_state: true

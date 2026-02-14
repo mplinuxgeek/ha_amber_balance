@@ -235,7 +235,7 @@ yaxis:
       min: -1000000
       max: 1000000
 series:
-  - entity: sensor.amber_balance_<site_id>_v2_position
+  - entity: sensor.amber_balance_<site_id>_position
     name: Daily position
     type: column
     yaxis_id: daily
@@ -247,7 +247,7 @@ series:
     data_generator: >
       const daily = entity.attributes?.recent_daily ?? []; return daily.map((d)
       => [new Date(d.date).getTime(), Number(d.position)]);
-  - entity: sensor.amber_balance_<site_id>_v2_position
+  - entity: sensor.amber_balance_<site_id>_position
     name: Month total
     type: line
     yaxis_id: month
@@ -263,7 +263,7 @@ series:
         sum += Number(d.position) || 0;
         return [new Date(d.date).getTime(), sum];
       });
-  - entity: sensor.amber_balance_<site_id>_v2_position
+  - entity: sensor.amber_balance_<site_id>_position
     name: Daily label
     type: line
     yaxis_id: daily
@@ -281,7 +281,7 @@ series:
         const y = v >= 0 ? v + SHIFT : v - SHIFT;
         return [new Date(d.date).getTime(), y];
       });
-  - entity: sensor.amber_balance_<site_id>_v2_position
+  - entity: sensor.amber_balance_<site_id>_position
     name: Import $
     type: line
     yaxis_id: meta
@@ -295,7 +295,7 @@ series:
     data_generator: >
       const daily = entity.attributes?.recent_daily ?? []; return daily.map((d)
       => [new Date(d.date + 'T12:00:00').getTime(), Number(d.import_value)]);
-  - entity: sensor.amber_balance_<site_id>_v2_position
+  - entity: sensor.amber_balance_<site_id>_position
     name: Export $
     type: line
     yaxis_id: meta
@@ -309,7 +309,7 @@ series:
     data_generator: >
       const daily = entity.attributes?.recent_daily ?? []; return daily.map((d)
       => [new Date(d.date + 'T12:00:00').getTime(), Number(d.export_value)]);
-  - entity: sensor.amber_balance_<site_id>_v2_position
+  - entity: sensor.amber_balance_<site_id>_position
     name: Surcharge $
     type: line
     yaxis_id: meta
@@ -323,7 +323,7 @@ series:
     data_generator: >
       const daily = entity.attributes?.recent_daily ?? []; return daily.map((d)
       => [new Date(d.date + 'T12:00:00').getTime(), Number(d.surcharge)]);
-  - entity: sensor.amber_balance_<site_id>_v2_position
+  - entity: sensor.amber_balance_<site_id>_position
     name: Subscription $
     type: line
     yaxis_id: meta
