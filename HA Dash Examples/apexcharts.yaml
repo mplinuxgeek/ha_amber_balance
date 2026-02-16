@@ -201,8 +201,8 @@ apex_config:
             background: "#FFFFFF"
 yaxis:
   - id: daily
-    min: "|-0.25|"
-    max: "|+0.25|"
+    min: "|-30|"
+    max: "|+30|"
     apex_config:
       title:
         text: Daily (AUD)
