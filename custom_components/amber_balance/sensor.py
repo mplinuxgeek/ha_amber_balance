@@ -67,22 +67,40 @@ def _dedupe_site_ids(site_ids: list[str]) -> list[str]:
     return list(dict.fromkeys(str(sid) for sid in site_ids if sid))
 
 
+def _short_site_suffix(site_id: str | None) -> str:
+    """Return a compact stable suffix used in entity IDs."""
+    raw = str(site_id or "default").lower()
+    compact = "".join(ch for ch in raw if ch.isalnum())
+    return (compact[:6] or "default")
+
+
+def _legacy_site_suffix(site_id: str | None) -> str:
+    """Return the historical full site suffix used by previous releases."""
+    return str(site_id or "default").lower()
+
+
 def _migrate_entity_ids(hass: HomeAssistant, entities: list[SensorEntity]) -> None:
     """Rename existing entities in the registry to explicit prefixed IDs."""
     registry = er.async_get(hass)
     for entity in entities:
         unique_id = entity.unique_id
+        legacy_unique_ids: list[str] = list(getattr(entity, "_legacy_unique_ids", []))
         legacy_unique_id = getattr(entity, "_legacy_unique_id", None)
+        if legacy_unique_id:
+            legacy_unique_ids.append(legacy_unique_id)
         desired_entity_id = getattr(entity, "_attr_entity_id", None)
         if not unique_id or not desired_entity_id:
             continue
         current_entity_id = registry.async_get_entity_id("sensor", DOMAIN, unique_id)
-        if not current_entity_id and legacy_unique_id:
-            current_entity_id = registry.async_get_entity_id(
-                "sensor",
-                DOMAIN,
-                legacy_unique_id,
-            )
+        if not current_entity_id:
+            for candidate in dict.fromkeys(legacy_unique_ids):
+                current_entity_id = registry.async_get_entity_id(
+                    "sensor",
+                    DOMAIN,
+                    candidate,
+                )
+                if current_entity_id:
+                    break
         if not current_entity_id or current_entity_id == desired_entity_id:
             continue
         if registry.async_get(desired_entity_id):
@@ -685,9 +703,14 @@ class AmberBalanceSensor(CoordinatorEntity[AmberCoordinator], SensorEntity):
         self._attr_name = name
         self._attr_icon = "mdi:currency-usd"
         self._attr_native_unit_of_measurement = "AUD"
-        site_suffix = (self._api._site_id or "default").lower()
+        site_suffix = _short_site_suffix(self._api._site_id)
+        legacy_site_suffix = _legacy_site_suffix(self._api._site_id)
         self._attr_entity_id = f"sensor.{DOMAIN}_{site_suffix}_position"
-        self._legacy_unique_id = f"{DOMAIN}_{site_suffix}_v2_position"
+        self._legacy_unique_ids = [
+            f"{DOMAIN}_{legacy_site_suffix}_position",
+            f"{DOMAIN}_{legacy_site_suffix}_v2_position",
+            f"{DOMAIN}_{site_suffix}_v2_position",
+        ]
         self._state = None
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, api._site_id)},
@@ -699,7 +722,7 @@ class AmberBalanceSensor(CoordinatorEntity[AmberCoordinator], SensorEntity):
 
     @property
     def unique_id(self):
-        site_suffix = (self._api._site_id or "default").lower()
+        site_suffix = _short_site_suffix(self._api._site_id)
         return f"{DOMAIN}_{site_suffix}_position"
 
     @property
@@ -779,9 +802,14 @@ class AmberMetricSensor(CoordinatorEntity[AmberCoordinator], SensorEntity):
         self._attr_native_unit_of_measurement = unit
         self._attr_state_class = state_class
         self._attr_device_class = device_class
-        site_suffix = (self._api._site_id or "default").lower()
+        site_suffix = _short_site_suffix(self._api._site_id)
+        legacy_site_suffix = _legacy_site_suffix(self._api._site_id)
         self._attr_entity_id = f"sensor.{DOMAIN}_{site_suffix}_{self._metric}"
-        self._legacy_unique_id = f"{DOMAIN}_{site_suffix}_v2_{self._metric}"
+        self._legacy_unique_ids = [
+            f"{DOMAIN}_{legacy_site_suffix}_{self._metric}",
+            f"{DOMAIN}_{legacy_site_suffix}_v2_{self._metric}",
+            f"{DOMAIN}_{site_suffix}_v2_{self._metric}",
+        ]
         self._state = None
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, api._site_id)},
@@ -792,7 +820,7 @@ class AmberMetricSensor(CoordinatorEntity[AmberCoordinator], SensorEntity):
 
     @property
     def unique_id(self):
-        site_suffix = (self._api._site_id or "default").lower()
+        site_suffix = _short_site_suffix(self._api._site_id)
         return f"{DOMAIN}_{site_suffix}_{self._metric}"
 
     @property
@@ -853,9 +881,14 @@ class AmberDiagnosticSensor(SensorEntity):
         self._metric = metric
         self._attr_name = name
         self._attr_icon = icon
-        site_suffix = (self._api._site_id or "default").lower()
+        site_suffix = _short_site_suffix(self._api._site_id)
+        legacy_site_suffix = _legacy_site_suffix(self._api._site_id)
         self._attr_entity_id = f"sensor.{DOMAIN}_{site_suffix}_diag_{self._metric}"
-        self._legacy_unique_id = f"{DOMAIN}_{site_suffix}_v2_diag_{self._metric}"
+        self._legacy_unique_ids = [
+            f"{DOMAIN}_{legacy_site_suffix}_diag_{self._metric}",
+            f"{DOMAIN}_{legacy_site_suffix}_v2_diag_{self._metric}",
+            f"{DOMAIN}_{site_suffix}_v2_diag_{self._metric}",
+        ]
         self._state = None
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, api._site_id)},
@@ -866,7 +899,7 @@ class AmberDiagnosticSensor(SensorEntity):
 
     @property
     def unique_id(self):
-        site_suffix = (self._api._site_id or "default").lower()
+        site_suffix = _short_site_suffix(self._api._site_id)
         return f"{DOMAIN}_{site_suffix}_diag_{self._metric}"
 
     @property
@@ -920,9 +953,14 @@ class AmberLastUpdateSensor(CoordinatorEntity[AmberCoordinator], SensorEntity):
         self._attr_name = name
         self._attr_icon = "mdi:clock-outline"
         self._api = api
-        site_suffix = (self._api._site_id or "default").lower()
+        site_suffix = _short_site_suffix(self._api._site_id)
+        legacy_site_suffix = _legacy_site_suffix(self._api._site_id)
         self._attr_entity_id = f"sensor.{DOMAIN}_{site_suffix}_last_update"
-        self._legacy_unique_id = f"{DOMAIN}_{site_suffix}_v2_last_update"
+        self._legacy_unique_ids = [
+            f"{DOMAIN}_{legacy_site_suffix}_last_update",
+            f"{DOMAIN}_{legacy_site_suffix}_v2_last_update",
+            f"{DOMAIN}_{site_suffix}_v2_last_update",
+        ]
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, api._site_id)},
             name=device_name,
@@ -938,7 +976,7 @@ class AmberLastUpdateSensor(CoordinatorEntity[AmberCoordinator], SensorEntity):
 
     @property
     def unique_id(self):
-        site_suffix = (self._api._site_id or "default").lower()
+        site_suffix = _short_site_suffix(self._api._site_id)
         return f"{DOMAIN}_{site_suffix}_last_update"
 
     @property
